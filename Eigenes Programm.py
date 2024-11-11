@@ -1,7 +1,7 @@
 import numpy as np
 
 
-Chat GPT
+#Chat GPT
 
 # Beispiel: Erstellen einer Punktwolke (x, y, z)
 # Angenommen, wir haben eine Punktwolke mit zufälligen 3D-Koordinaten (x, y, z)
