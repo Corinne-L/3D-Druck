@@ -1,3 +1,5 @@
+## TO-DO Biblotheken einzulesen
+
 import numpy as np
 import ezdxf
 
@@ -56,3 +58,5 @@ print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
 
 
 #Test 
+
+import Main_Module.configuration_model
