@@ -1,33 +1,55 @@
 import numpy as np
+import ezdxf
 
 
-#Chat GPT
+#Laden einer Punktwolke - XYZ-Format
+def load_xyz(filename):
+    with open(filename, 'r') as file:
+        header = file.readline().strip()
+        data = np.loadtxt(file)
+    return data
 
-# Beispiel: Erstellen einer Punktwolke (x, y, z)
-# Angenommen, wir haben eine Punktwolke mit zufälligen 3D-Koordinaten (x, y, z)
-point_cloud = np.random.rand(1000, 3) * 100  # 1000 Punkte in einem Bereich von 0 bis 100 (Meter)
 
-# Schritt 1: Sortieren der Punktwolke nach den z-Werten
-point_cloud_sorted = point_cloud[point_cloud[:, 2].argsort()]
+# Laden des Perimeters - DXF Format
+def load_perimeter(dxf_filename):
+    doc = ezdxf.readfile(dxf_filename)
+    msp = doc.modelspace()
+    
+    rectangle_coords = []
+    for entity in msp.query("POLYLINE"):
+        if entity.is_closed: 
+            for x, y, *_ in entity:
+                rectangle_coords.append((x, y))
+            break 
+    
+    if len(rectangle_coords) != 4:
+        raise ValueError("Das DXF enthält kein gültiges Rechteck.")
+    
+    x_coords, y_coords = zip(*rectangle_coords)
+    min_x, max_x = min(x_coords), max(x_coords)
+    min_y, max_y = min(y_coords), max(y_coords)
+    
+    return min_x, max_x, min_y, max_y
 
-# Schritt 2: Definiere die Schichtdicke (in diesem Fall 50 cm)
-layer_thickness = 0.5  # 50 cm
 
-# Schritt 3: Schichtenbildung basierend auf den z-Werten
-layers = {}
-min_z = np.min(point_cloud_sorted[:, 2])
-max_z = np.max(point_cloud_sorted[:, 2])
-num_layers = int(np.ceil((max_z - min_z) / layer_thickness))
+# Filtern der Punktwolke
+def filter_points_in_rectangle(points, min_x, max_x, min_y, max_y): 
+    x, y, _ = points  
+    mask = (x >= min_x) & (x <= max_x) & (y >= min_y) & (y <= max_y)
+    return points[mask]
 
-# Punkte in Schichten einteilen
-for i in range(num_layers):
-    layer_min_z = min_z + i * layer_thickness
-    layer_max_z = layer_min_z + layer_thickness
-    layer_points = point_cloud_sorted[(point_cloud_sorted[:, 2] >= layer_min_z) & 
-                                      (point_cloud_sorted[:, 2] < layer_max_z)]
-    layers[f'Layer_{i + 1}'] = layer_points
+# Speichen der Zugeschnittenen Punktwolke
+def save_xyz(filename, points):
+    with open(filename, 'w') as file:
+        np.savetxt(file, points, fmt='%.3f')
 
-# Ausgabe der Anzahl der Punkte pro Schicht
-for layer_name, points in layers.items():
-    print(f"{layer_name}: {len(points)} Punkte")
+xyz_filename = "input.xyz"   
+dxf_filename = "rectangle.dxf"  
+output_filename = "filtered_output.xyz"  
 
+points = load_xyz(xyz_filename)
+min_x, max_x, min_y, max_y = load_perimeter(dxf_filename)
+filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
+save_xyz(output_filename, filtered_points)
+
+print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
