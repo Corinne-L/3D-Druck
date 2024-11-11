@@ -53,3 +53,6 @@ filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
 save_xyz(output_filename, filtered_points)
 
 print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
+
+
+#Test 
