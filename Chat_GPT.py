@@ -102,3 +102,24 @@ for i in range(num_layers):
 for layer_name, points in layers.items():
     print(f"{layer_name}: {len(points)} Punkte")
 
+
+
+
+
+#Test 
+
+import Main_Module.configuration_model
+
+
+dateipfad = input("Gib den Pfad der Datei ein: ")
+
+# Öffne die Datei im Lesemodus
+try:
+    with open(dateipfad, 'r', encoding='utf-8') as file:
+        # Lese den Inhalt der Datei
+        inhalt = file.read()
+        print(inhalt)
+except FileNotFoundError:
+    print("Die Datei wurde nicht gefunden.")
+except IOError:
+    print("Ein Fehler beim Öffnen der Datei ist aufgetreten.")

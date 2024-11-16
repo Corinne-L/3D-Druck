@@ -2,23 +2,19 @@
 
 import numpy as np
 import ezdxf
+import streamlit as st
+import pandas as pd
 
-
-#Laden einer Punktwolke - XYZ-Format
-def load_xyz(filename):
-    with open(filename, 'r') as file:
-        header = file.readline().strip()
-        data = np.loadtxt(file)
-    return data
-
+dxf_filename = ("Perimeter2.dxf")
+xyz_filename = ("xyz_filename.xyz")
+output_filename = ("TEST_Output")
 
 # Laden des Perimeters - DXF Format
 def load_perimeter(dxf_filename):
     doc = ezdxf.readfile(dxf_filename)
     msp = doc.modelspace()
-    
     rectangle_coords = []
-    for entity in msp.query("POLYLINE"):
+    for entity in msp.query("LWPOLYLINE"):
         if entity.is_closed: 
             for x, y, *_ in entity:
                 rectangle_coords.append((x, y))
@@ -33,30 +29,33 @@ def load_perimeter(dxf_filename):
     
     return min_x, max_x, min_y, max_y
 
+#Laden einer Punktwolke - XYZ-Format
+def load_xyz(xyz_filename):
+    points = np.loadtxt(xyz_filename, skiprows=1)
+    print (points)
+    return points
+
 
 # Filtern der Punktwolke
 def filter_points_in_rectangle(points, min_x, max_x, min_y, max_y): 
-    x, y, _ = points  
+    x = points[:, 0]
+    y = points[:, 1] 
+    z = points[:, 2] 
     mask = (x >= min_x) & (x <= max_x) & (y >= min_y) & (y <= max_y)
     return points[mask]
 
 # Speichen der Zugeschnittenen Punktwolke
-def save_xyz(filename, points):
-    with open(filename, 'w') as file:
-        np.savetxt(file, points, fmt='%.3f')
+def save_xyz(output_filename,filtered_points):
+    if filtered_points.size == 0:
+        print("Keine Punkte zum Speichern vorhanden.")
+        return
+    with open(output_filename, 'w') as file:
+        np.savetxt(file, filtered_points, fmt='%.3f')
+        print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
 
-xyz_filename = "input.xyz"   
-dxf_filename = "rectangle.dxf"  
-output_filename = "filtered_output.xyz"  
 
-points = load_xyz(xyz_filename)
 min_x, max_x, min_y, max_y = load_perimeter(dxf_filename)
+points = load_xyz(xyz_filename)
 filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
 save_xyz(output_filename, filtered_points)
 
-print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
-
-
-#Test 
-
-import Main_Module.configuration_model
