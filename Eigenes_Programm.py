@@ -4,14 +4,18 @@ import numpy as np
 import ezdxf
 import streamlit as st
 import pandas as pd
+import tempfile
+import os
 
-dxf_filename = ("Perimeter2.dxf")
-xyz_filename = ("xyz_filename.xyz")
-output_filename = ("TEST_Output")
+# Definitoinen von Funktionen und Klassen
+
 
 # Laden des Perimeters - DXF Format
 def load_perimeter(dxf_filename):
-    doc = ezdxf.readfile(dxf_filename)
+    with tempfile.NamedTemporaryFile(delete=False) as temp_dxf:
+        temp_dxf.write(dxf_filename.read())  # Schreiben des Inhalts in die temporäre Datei
+        temp_dxf_path = temp_dxf.name  # Pfad zur temporären Datei
+    doc = ezdxf.readfile(temp_dxf_path)
     msp = doc.modelspace()
     rectangle_coords = []
     for entity in msp.query("LWPOLYLINE"):
@@ -26,13 +30,15 @@ def load_perimeter(dxf_filename):
     x_coords, y_coords = zip(*rectangle_coords)
     min_x, max_x = min(x_coords), max(x_coords)
     min_y, max_y = min(y_coords), max(y_coords)
-    
+
+     # Temporäre Datei löschen, wenn sie nicht mehr benötigt wird
+    os.remove(temp_dxf_path)
+
     return min_x, max_x, min_y, max_y
 
 #Laden einer Punktwolke - XYZ-Format
 def load_xyz(xyz_filename):
     points = np.loadtxt(xyz_filename, skiprows=1)
-    print (points)
     return points
 
 
@@ -53,9 +59,27 @@ def save_xyz(output_filename,filtered_points):
         np.savetxt(file, filtered_points, fmt='%.3f')
         print(f"Die gefilterte Punktwolke wurde in '{output_filename}' gespeichert.")
 
+#Definition Variabeln
 
-min_x, max_x, min_y, max_y = load_perimeter(dxf_filename)
-points = load_xyz(xyz_filename)
-filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
-save_xyz(output_filename, filtered_points)
 
+## Streamlit
+st.title("3D Druck erstellen")
+st.write("Diese anwendung dient dazu ein geschichtetes 3D Modell zu erstellen, welches anschliessend gedruckt werden kann.")
+
+xyz_filename = st.file_uploader("Lade hier die xyz-Datei hoch", type="xyz")
+dxf_filename = st.file_uploader("Lade hier den Perimeter hoch", type="dxf")
+
+if xyz_filename and dxf_filename:
+    try:
+        min_x, max_x, min_y, max_y = load_perimeter(dxf_filename)
+        points = load_xyz(xyz_filename)
+        filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
+
+        save_button = st.button("Gefilterte Punktwolke speichern")
+        if save_button:
+            output_filename = "gefilterte_PW.xyz"
+            save_xyz(output_filename, filtered_points)
+            st.success(f"Die gefilterte Punktwolke wurde als '{output_filename}' gespeichert.")
+            
+    except Exception as e:
+        st.error(f"Fehler: {e}")  

@@ -14,11 +14,8 @@ dxf_filename = st.file_uploader("Lade hier den Perimeter hoch", type="dxf")
 
 if xyz_filename and dxf_filename:
     try:
-        # Daten laden
         points = load_xyz(xyz_filename)
         min_x, max_x, min_y, max_y = load_perimeter(dxf_filename)
-
-        # Punktwolke filtern
         filtered_points = filter_points_in_rectangle(points, min_x, max_x, min_y, max_y)
 
         # Output speichern und bereitstellen

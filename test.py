@@ -1,32 +1,21 @@
-#Laden einer Punktwolke - XYZ-Format
-
-import numpy as np
-
-xyz_filename = ("xyz_filename.xyz")
-
-def load_xyz(xyz_filename):
-    data = np.loadtxt(xyz_filename, skiprows=1)
-    return data
-
-data= load_xyz(xyz_filename)
-print(data[5])
+output_filename = ("TEST_Output")
 
 
 
-"""
-# helper function
-def print_entity(e):
-    print("LINE on layer: %s\n" % e.dxf.layer)
-    print("start point: %s\n" % e.dxf.start)
-    print("end point: %s\n" % e.dxf.end)
+save_xyz(output_filename, filtered_points)
 
-# iterate over all entities in modelspace
-msp = doc.modelspace()
-for e in msp:
-    if e.dxftype() == "LINE":
-        print_entity(e)
 
-# entity query for all LINE entities in modelspace
-for e in msp.query("LINE"):
-    print_entity(e)
-    """
+    # Output speichern und bereitstellen
+        st.write(f"Gefilterte Punkte: {filtered_points.shape[0]}")
+        if st.button("Download gefilterter Punktwolke"):
+            csv = "\n".join(" ".join(map(str, row)) for row in filtered_points)
+            st.download_button(
+                label="Gefilterte Punktwolke herunterladen",
+                data=csv,
+                file_name="filtered_output.xyz",
+                mime="text/plain",
+            )
+
+    except Exception as e:
+        st.error(f"Fehler: {e}")
+
