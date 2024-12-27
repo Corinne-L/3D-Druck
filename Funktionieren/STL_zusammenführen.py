@@ -1,19 +1,19 @@
 from stl import mesh
 import numpy as np
 
-def combine_stl_files(stl_output_file, *input_files):
+def combine_stl_files(stl_output_file: str, *input_files: str):
     """
-    Kombiniert mehrere STL-Dateien zu einer einzigen und speichert sie.
+    Kombiniert mehrere STL-Dateien zu einer einzigen und speichert diese.
 
     Parameters:
-    output_file (str): Der Name der Ausgabedatei.
+    stl_output_file (str): Der Name der Ausgabedatei.
     input_files (str): Die Namen der Eingabedateien.
 
     Returns:
-    None
+    None: Die Funktion gibt nichts zurück sondern Speichert die kombinerten STL in einer Datei. 
     """
     # Laden der STL-Dateien
-    meshes = [mesh.Mesh.from_file(file) for file in input_files]
+    meshes: list[mesh.Mesh]= [mesh.Mesh.from_file(file) for file in input_files]
 
     # Kombinieren der Meshes
     combined_mesh = mesh.Mesh(np.concatenate([m.data for m in meshes]))
