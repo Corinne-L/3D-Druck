@@ -1,7 +1,7 @@
 from stl import mesh
 import numpy as np
 
-def combine_stl_files(stl_output_file: str, *input_files: str):
+def combine_stl_files(stl_output_file: str, *input_files: str)->None:
     """
     Kombiniert mehrere STL-Dateien zu einer einzigen und speichert diese.
 
