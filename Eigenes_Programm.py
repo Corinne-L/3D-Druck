@@ -3,13 +3,16 @@ import streamlit as st
 import pandas as pd
 import io
 import os
+import win32com.client
 
 
 # Definitionen von Funktionen und Klassen
 from Funktionieren.PW_filterung import load_perimeter, load_xyz, filter_points_in_rectangle, save_xyz
 from Funktionieren.Splitter import save_dxf, split_and_remove_entities
-""" from Funktionieren.Gebäude import convert, export,save_all, close_acad
-from Funktionieren.STL_zusammenführen import combine_stl_files """
+from Funktionieren.Gebäude import save_all, close_acad
+""" convert, export """
+from Funktionieren.Dach_extruden_acad import explode, Netz, to_surface,extrude, export_d
+""" from Funktionieren.STL_zusammenführen import combine_stl_files """
 
 
 # Definition Variablen mit Standardwerten
@@ -122,15 +125,43 @@ elif st.session_state.page == "page_1":
                 st.success(f"Gebäude erfolgreich gespeichert als: Gebäude.dxf.")
             else:
                 st.warning("Keine Gebäude gefunden.")
-        
+
             if st.button("Nächster Schritt", on_click=lambda: st.session_state.update(page="page_2")):
                 pass
-
+            print(output_file_dach)
+        
         except Exception as e:
             st.error(f"Fehler: {e}")
 
+        try:
+            # AutoCAD-Instanz starten oder verbinden
+            acad = win32com.client.Dispatch("AutoCAD.Application")
+            acad.Visible = True  # AutoCAD sichtbar machen
+
+            # DXF-Datei öffnen
+            st.info(f"Öffne DXF-Datei: {output_file_dach}")
+            doc = acad.Documents.Open(output_file_dach)
+            # Speicherort für die STL-Datei
+            output_stl = os.path.join(st.session_state.output_folder, "dach.stl")
+
+            explode(doc)
+            Netz(doc)
+            to_surface(doc)
+            extrude(doc)
+            export_d(doc, output_stl)
+            save_all(doc)
+            close_acad(acad)
+
+            st.success(f"STL-Datei wurde erfolgreich erstellt und als Dach.stl gespeichert")
+
+        except Exception as e:
+            st.error(f"Fehler während der Verarbeitung in AutoCAD:: {e}")
+
+
+
 # Seite 2 anzeigen (nach dem Speichern), Schritt 5
-elif st.session_state.page == "page_2":
+if st.session_state.page == "page_2":
     st.header("3. Ergebnis Exportieren")
     st.write("Hier kannst du das Ergebnis exportieren.")
     st.write(f"Gespeicherte Dateien befinden sich im Ordner: {st.session_state.output_folder}")
+
