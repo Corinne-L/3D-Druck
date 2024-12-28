@@ -53,7 +53,7 @@ def split_and_remove_entities(dxf_split, layers_to_remove) -> tuple:
     return doc, entities_to_export
 
 # DXF speichern
-def save_dxf(doc: ezdxf.document.DXFDocument, output_file: str) -> None:
+def save_dxf(doc, output_file: str) -> None:
     """
     Speichert das DXF-Dokument in einer Datei.
 
