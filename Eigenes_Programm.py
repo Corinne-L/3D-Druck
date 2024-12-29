@@ -12,7 +12,7 @@ from Funktionieren.PW_filterung import load_perimeter, load_xyz, filter_points_i
 from Funktionieren.Splitter import save_dxf, split_and_remove_entities
 from Funktionieren.Gebäude import save_all, close_acad, convert, export 
 from Funktionieren.Dach_extruden_acad import explode, Netz, to_surface,extrude, export_d
-""" from Funktionieren.STL_zusammenführen import combine_stl_files """
+from Funktionieren.STL_zusammenführen import combine_stl_files 
 
 
 # Definition Variablen mit Standardwerten
@@ -20,6 +20,7 @@ output_folder = ()
 output_file_gebaeude = "Gebäude.dxf"
 output_file_dach = "Dächer.dxf"
 output_filename = "gefilterte_PW.xyz"
+output_file_gesamt = "kombiniert.stl"
 
 # Initialisiere den Seitenzustand
 if 'page' not in st.session_state:
@@ -97,7 +98,7 @@ elif st.session_state.page == "page_1":
     
     # Schritt 4: Verarbeitung der Dateien
     if dxf_split and dxf_split_g:
-        st.success("Einen Moment bitte die Daten werden verarbeitet")
+        st.info("Einen Moment bitte, die Daten werden verarbeitet")
         try:
             # Speicherorte festlegen
             output_file_dach = os.path.join(st.session_state.output_folder, "Dächer.dxf")
@@ -173,11 +174,22 @@ elif st.session_state.page == "page_1":
 
             st.success(f"STL-Datei wurde erfolgreich erstellt und als Gebaude.stl gespeichert")
 
-            if st.button("Nächster Schritt", on_click=lambda: st.session_state.update(page="page_2")):
+        except Exception as e:
+            st.error(f"Fehler während der Verarbeitung in AutoCAD:: {e}")
+
+
+
+        #STL zusammenführen
+        try:
+           stl_output_file = os.path.join(st.session_state.output_folder, "Gesamt.stl")
+           combine_stl_files(stl_output_file, output_stl_g, output_stl)
+           st.success(f"STL-Datei wurde erfolgreich zusammengeführt und gespeichert")
+
+           if st.button("Nächster Schritt", on_click=lambda: st.session_state.update(page="page_2")):
                 pass
 
         except Exception as e:
-            st.error(f"Fehler während der Verarbeitung in AutoCAD:: {e}")
+            st.error(f"Fehler: {e}")
 
 
 

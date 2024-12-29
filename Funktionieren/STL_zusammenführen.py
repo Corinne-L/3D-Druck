@@ -23,4 +23,4 @@ def combine_stl_files(stl_output_file: str, *input_files: str)->None:
     print(f"STL-Dateien erfolgreich zusammengeführt und in '{stl_output_file}' exportiert!")
 
 # Beispielaufruf der Funktion
-combine_stl_files("kombiniert.stl", "solid.stl", "dach.stl")
+#combine_stl_files("kombiniert.stl", "solid.stl", "dach.stl")
