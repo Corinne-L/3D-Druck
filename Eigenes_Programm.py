@@ -3,14 +3,14 @@ import streamlit as st
 import pandas as pd
 import io
 import os
+import pythoncom
 import win32com.client
 
 
 # Definitionen von Funktionen und Klassen
 from Funktionieren.PW_filterung import load_perimeter, load_xyz, filter_points_in_rectangle, save_xyz
 from Funktionieren.Splitter import save_dxf, split_and_remove_entities
-from Funktionieren.Gebäude import save_all, close_acad
-""" convert, export """
+from Funktionieren.Gebäude import save_all, close_acad, convert, export 
 from Funktionieren.Dach_extruden_acad import explode, Netz, to_surface,extrude, export_d
 """ from Funktionieren.STL_zusammenführen import combine_stl_files """
 
@@ -81,12 +81,10 @@ elif st.session_state.page == "start":
 # Seite 1 anzeigen (nach dem Speichern), Schritt 3
 elif st.session_state.page == "page_1":
     st.header("2. Splitting der Gebäude in Rumpf und Dach")
-    dxf_split = st.file_uploader("Lade hier die Solid Gebäude Datei hoch", type="dxf")
+    dxf_split = st.file_uploader("Lade hier die **Seperated** Gebäude Datei hoch", type="dxf")
+    dxf_split_g = st.file_uploader("Lade hier die **Solid** Gebäude Datei hoch", type="dxf")
 
-    if dxf_split is not None:
-        # Kopiere den Inhalt von dxf_split in dxf_split_g
-        dxf_split_g = io.BytesIO(dxf_split.getvalue())
-
+    #Layer die gelöscht werden für Gebäude
     layers_dach = [
         "Roof_Gebaeude Einzelhaus", "Roof_Gebaeude unsichtbar", 
         "Roof_Kapelle", "Roof_Lagertank", 
@@ -94,13 +92,12 @@ elif st.session_state.page == "page_1":
         "Roof_Offenes Gebaeude", "Roof_Sakrales Gebaeude", "0"
     ]
     layers_gebaeude = [
-        "Build_Gebaeude Einzelhaus", "Build_Gebaeude unsichtbar",
-        "Build_Kapelle", "Build_Lagertank", 
-        "Build_Lueftungsschacht", "Build_Mauer gross", "Build_Sakrales Gebaeude", "0"
+        "Wall", "Floor", "0"
     ]
     
     # Schritt 4: Verarbeitung der Dateien
-    if dxf_split:
+    if dxf_split and dxf_split_g:
+        st.success("Einen Moment bitte die Daten werden verarbeitet")
         try:
             # Speicherorte festlegen
             output_file_dach = os.path.join(st.session_state.output_folder, "Dächer.dxf")
@@ -114,10 +111,7 @@ elif st.session_state.page == "page_1":
             else:
                 st.warning("Keine Dächer gefunden.")
 
-        except Exception as e:
-            st.error(f"Fehler: {e}")
-
-        try:
+        
             # Filterung Gebäude
             doc_gebaeude, Gebäude = split_and_remove_entities(dxf_split_g, layers_dach)
             if Gebäude:
@@ -125,15 +119,14 @@ elif st.session_state.page == "page_1":
                 st.success(f"Gebäude erfolgreich gespeichert als: Gebäude.dxf.")
             else:
                 st.warning("Keine Gebäude gefunden.")
-
-            if st.button("Nächster Schritt", on_click=lambda: st.session_state.update(page="page_2")):
-                pass
-            print(output_file_dach)
         
         except Exception as e:
             st.error(f"Fehler: {e}")
+        
 
         try:
+            pythoncom.CoInitialize()
+            
             # AutoCAD-Instanz starten oder verbinden
             acad = win32com.client.Dispatch("AutoCAD.Application")
             acad.Visible = True  # AutoCAD sichtbar machen
@@ -141,8 +134,9 @@ elif st.session_state.page == "page_1":
             # DXF-Datei öffnen
             st.info(f"Öffne DXF-Datei: {output_file_dach}")
             doc = acad.Documents.Open(output_file_dach)
+            
             # Speicherort für die STL-Datei
-            output_stl = os.path.join(st.session_state.output_folder, "dach.stl")
+            output_stl = os.path.join(st.session_state.output_folder, "Dach.stl")
 
             explode(doc)
             Netz(doc)
@@ -150,9 +144,37 @@ elif st.session_state.page == "page_1":
             extrude(doc)
             export_d(doc, output_stl)
             save_all(doc)
-            close_acad(acad)
 
             st.success(f"STL-Datei wurde erfolgreich erstellt und als Dach.stl gespeichert")
+
+
+        except Exception as e:
+            st.error(f"Fehler während der Verarbeitung in AutoCAD:: {e}")
+
+
+        try:
+            pythoncom.CoInitialize()
+            
+            # AutoCAD-Instanz starten oder verbinden
+            acad = win32com.client.Dispatch("AutoCAD.Application")
+            acad.Visible = True  # AutoCAD sichtbar machen
+
+            # DXF-Datei öffnen
+            st.info(f"Öffne DXF-Datei: {output_file_gebaeude}")
+            doc = acad.Documents.Open(output_file_gebaeude)
+            
+            # Speicherort für die STL-Datei
+            output_stl_g = os.path.join(st.session_state.output_folder, "Gebaede.stl")
+
+            convert(doc)
+            export(doc, output_stl_g)
+            save_all(doc)
+            close_acad(acad)
+
+            st.success(f"STL-Datei wurde erfolgreich erstellt und als Gebaude.stl gespeichert")
+
+            if st.button("Nächster Schritt", on_click=lambda: st.session_state.update(page="page_2")):
+                pass
 
         except Exception as e:
             st.error(f"Fehler während der Verarbeitung in AutoCAD:: {e}")
