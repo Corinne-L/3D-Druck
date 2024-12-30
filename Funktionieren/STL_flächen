@@ -1,0 +1,87 @@
+import open3d as o3d
+import numpy as np
+import pyvista as pv
+from scipy.spatial import Delaunay
+
+# 1. Punktwolke laden
+point_cloud = o3d.io.read_point_cloud("gefilterte_PW.xyz")  # Oder ein anderes Format wie .ply
+points = np.asarray(point_cloud.points)
+
+# Extrahiere Z-Koordinaten (Höhenwerte)
+z_values = points[:, 2]
+xy_points = points[:, :2]
+
+# 2. Definiere Höhenstufen (z.B. 467.00, 468.00, 469.00, ...)
+min_z = np.min(z_values)
+max_z = np.max(z_values)
+step = 1  # Schrittweite für Höhenstufen (1 Meter)
+height_stages = np.arange(min_z, max_z + step, step)
+
+
+# Initialisiere die Liste für Volumen
+volumes = []
+
+for i, h in enumerate(height_stages):
+    # Filtere Punkte, die sich oberhalb der aktuellen Z-Höhe befinden
+    points_in_stage = points[z_values >= h]  # Alle Punkte mit Z >= h
+
+    if len(points_in_stage) > 3:  # Mindestens 3 Punkte für Triangulation
+        # Delaunay-Triangulation für die XY-Punkte der aktuellen Höhenstufe
+        triangulation = Delaunay(points_in_stage[:, :2])
+        faces = triangulation.simplices
+        
+        # Erstelle das Mesh für diese Stufe und setze Z-Werte auf die aktuelle Höhe
+        points_in_stage[:, 2] = h  # Alle Punkte dieser Schicht auf die Höhe h setzen
+        stage_mesh = pv.PolyData(points_in_stage[:, :3])
+        
+        # PyVista erwartet ein bestimmtes Format für die Dreieckslisten
+        formatted_faces = np.hstack(
+            [[3, *face] for face in faces]
+        ).flatten()
+        stage_mesh.faces = formatted_faces
+        
+        # Erstelle obere Fläche
+        top_mesh = pv.PolyData(points_in_stage[:, :3])
+        top_mesh.faces = formatted_faces
+
+        # Für die unterste Schicht: Erstelle die untere Fläche
+        if i == 0:  # Nur bei der ersten Höhenstufe
+            lower_points = points_in_stage.copy()
+            lower_points[:, 2] = h - 1  # Senke die Z-Werte um 1 Meter
+            lower_mesh = pv.PolyData(lower_points[:, :3])
+            lower_mesh.faces = formatted_faces
+
+        # Extrudiere vertikale Flächen
+        vertical_mesh = stage_mesh.extrude([0, 0, -1], capping=False)  # Nur Seiten extrudieren
+        
+        # Kombiniere obere Fläche mit vertikalen Flächen
+        if i == 0:  # Bei der ersten Schicht: Füge auch die untere Fläche hinzu
+            full_mesh = top_mesh.merge(lower_mesh).merge(vertical_mesh)
+        else:  # Für alle anderen Schichten: Nur obere und vertikale Flächen kombinieren
+            full_mesh = top_mesh.merge(vertical_mesh)
+        
+        volumes.append(full_mesh)
+
+# 4. Kombiniere alle Volumen in ein Mesh
+if volumes:  # Prüfen, ob Volumen erstellt wurden
+    combined_volume = volumes[0]
+    for volume in volumes[1:]:
+        combined_volume = combined_volume.merge(volume)
+
+    # 6. Exportiere das Volumen als STL
+    combined_volume.save('gestuftes_gelaendemodell_volumen.stl')
+    print("STL-Datei mit Volumen wurde erfolgreich exportiert.")
+else:
+    print("Es wurden keine Volumen erstellt.")
+
+
+# 4. Kombiniere alle Volumen in ein Mesh
+combined_volume = volumes[0]
+for volume in volumes[1:]:
+    combined_volume = combined_volume.merge(volume)
+
+
+# 6. Exportiere das Volumen als STL
+combined_volume.save('gestuftes_gelaendemodell_volumen.stl')
+
+print("STL-Datei mit Volumen wurde erfolgreich exportiert.")
