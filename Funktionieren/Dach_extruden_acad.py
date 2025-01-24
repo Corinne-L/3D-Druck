@@ -1,9 +1,13 @@
 import win32com.client
 import streamlit as st
 
-#from Funktionieren.Gebäude import save_all, close_acad 
+""" from Funktionieren.Gebäude import save_all, close_acad  """
 
-
+def filedia(doc):
+    try:
+        doc.SendCommand(f"_FILEDIA\n0\n")
+    except Exception as e:
+        st.warning(f"Fehler beim Verarbeiten der Datei: {e}")
 
 def explode(doc):
     try:
@@ -38,17 +42,18 @@ def export_d(doc, output_stl):
         st.warning(f"Fehler beim Verarbeiten der Datei: {e}")
 
 
-## AutoCAD-Instanz starten oder verbinden
+ ## AutoCAD-Instanz starten oder verbinden
 #acad = win32com.client.Dispatch("AutoCAD.Application")
 #acad.Visible = True  # AutoCAD sichtbar machen
 
 ## DXF-Datei öffnen
 #filename = r"C:\Users\Corinne\OneDrive - Hochschule Luzern\3. Semester_HS24\DC_Programming\3D Druck\block2.dxf"
 #doc = acad.Documents.Open(filename)
-#output_stl =r"C:\Users\Corinne\OneDrive - Hochschule Luzern\3. Semester_HS24\DC_Programming\3D Druck\dach.stl" """
-
+#output_stl =r"C:\Users\Corinne\OneDrive - Hochschule Luzern\3. Semester_HS24\DC_Programming\3D Druck\dach.stl" 
 
 ## Funktion aufrufen
+
+#filedia(doc)
 #explode(doc)
 #Netz(doc)
 #to_surface(doc)
@@ -56,5 +61,3 @@ def export_d(doc, output_stl):
 #export_d(doc)
 #save_all(doc)
 #close_acad(acad) 
-
-
